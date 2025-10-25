@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Capitales Europeas</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Fuente personalizada y estilos básicos */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Fondo claro */
+        }
+        /* Estilo para el input de respuesta para un mejor enfoque */
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Sombra de enfoque azul suave */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Contenedor principal de la tarjeta del quiz -->
+    <div id="quiz-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 md:p-10 border-t-8 border-indigo-500 transform transition-all duration-300">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 text-center mb-6">
+            Quiz de Capitales Europeas 🇪🇺
+        </h1>
+
+        <!-- Puntuación y Contador -->
+        <div class="flex justify-between items-center mb-6 text-lg font-semibold text-gray-600">
+            <span id="score-display">Puntuación: 0</span>
+            <span id="progress-display" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm shadow-inner">Pregunta 0/0</span>
+        </div>
+
+        <!-- Área de Pregunta -->
+        <div class="bg-indigo-50 p-6 rounded-lg shadow-inner mb-6">
+            <p class="text-xl text-gray-700 mb-2">¿Cuál es la capital de...?</p>
+            <p id="country-display" class="text-4xl font-black text-indigo-600 text-center animate-pulse">
+                Cargando país...
+            </p>
+        </div>
+
+        <!-- Formulario de Respuesta -->
+        <div id="answer-form">
+            <input type="text" id="answer-input" placeholder="Escribe tu respuesta aquí" 
+                   class="w-full p-3 md:p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-indigo-500 transition duration-150 mb-4" 
+                   aria-label="Campo de respuesta de la capital">
+            
+            <button id="submit-button" 
+                    class="w-full py-3 md:py-4 bg-indigo-600 text-white text-xl font-bold rounded-lg hover:bg-indigo-700 transition duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.01] disabled:opacity-50"
+                    disabled>
+                Comprobar
+            </button>
+        </div>
+
+        <!-- Área de Retroalimentación/Mensajes -->
+        <div id="feedback-area" class="mt-6 min-h-[4rem]">
+            <!-- Los mensajes de éxito/error se insertarán aquí -->
+        </div>
+        
+        <!-- Botón para empezar de nuevo (oculto al inicio) -->
+        <button id="restart-button" 
+                class="w-full py-3 mt-4 bg-green-500 text-white text-lg font-bold rounded-lg hover:bg-green-600 transition duration-200 shadow-md hidden"
+                onclick="startQuiz()">
+            Empezar de Nuevo
+        </button>
+
+    </div>
+
+    <script>
+        // Definición de los datos del Quiz
+        const COUNTRIES = [
+            { country: "Francia", capital: "París" },
+            { country: "Alemania", capital: "Berlín" },
+            { country: "España", capital: "Madrid" },
+            { country: "Italia", capital: "Roma" },
+            { country: "Reino Unido", capital: "Londres" },
+            { country: "Grecia", capital: "Atenas" },
+            { country: "Portugal", capital: "Lisboa" },
+            { country: "Bélgica", capital: "Bruselas" },
+            { country: "Países Bajos", capital: "Ámsterdam" },
+            { country: "Suecia", capital: "Estocolmo" },
+            { country: "Noruega", capital: "Oslo" },
+            { country: "Dinamarca", capital: "Copenhague" },
+            { country: "Austria", capital: "Viena" },
+            { country: "Suiza", capital: "Berna" },
+            { country: "Irlanda", capital: "Dublín" },
+            { country: "Polonia", capital: "Varsovia" },
+            { country: "Hungría", capital: "Budapest" },
+            { country: "República Checa", capital: "Praga" },
+            { country: "Finlandia", capital: "Helsinki" },
+            { country: "Islandia", capital: "Reikiavik" }
+        ];
+
+        // --- Variables de Estado del Juego ---
+        let currentQuizData = []; // Datos para la ronda actual
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let currentQuestion = null;
+        let isAnswered = false;
+
+        // --- Referencias a Elementos del DOM ---
+        const countryDisplay = document.getElementById('country-display');
+        const answerInput = document.getElementById('answer-input');
+        const submitButton = document.getElementById('submit-button');
+        const feedbackArea = document.getElementById('feedback-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const progressDisplay = document.getElementById('progress-display');
+        const restartButton = document.getElementById('restart-button');
+        const quizContainer = document.getElementById('quiz-container');
+
+        // --- Funciones de Utilidad ---
+
+        /**
+         * Limpia y normaliza una cadena de texto para la comparación (minúsculas, sin acentos).
+         * @param {string} text 
+         * @returns {string} Texto normalizado.
+         */
+        function normalizeText(text) {
+            return text
+                .toLowerCase()
+                .trim()
+                .normalize("NFD") // Descompone caracteres como 'é' a 'e' + acento
+                .replace(/[\u0300-\u036f]/g, ""); // Elimina los acentos
+        }
+
+        /**
+         * Muestra un mensaje de retroalimentación temporal.
+         * @param {string} message Mensaje a mostrar.
+         * @param {string} type 'success' o 'error'.
+         */
+        function showFeedback(message, type) {
+            let bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
+            
+            feedbackArea.innerHTML = `
+                <div class="p-3 border-l-4 ${bgColor} rounded-md shadow-sm transition duration-300 transform scale-100">
+                    <p class="font-medium">${message}</p>
+                </div>
+            `;
+            // Limpia el área después de un tiempo si es un feedback de respuesta
+            if (type !== 'end') {
+                 setTimeout(() => {
+                    if (feedbackArea.firstChild) {
+                        feedbackArea.firstChild.classList.add('opacity-0', 'scale-95');
+                        setTimeout(() => feedbackArea.innerHTML = '', 300);
+                    }
+                }, 2000); // 2 segundos
+            }
+        }
+
+        // --- Lógica del Quiz ---
+
+        /**
+         * Selecciona un subconjunto aleatorio de 10 preguntas.
+         */
+        function selectRandomQuestions() {
+            // Mezcla el array original
+            const shuffled = [...COUNTRIES].sort(() => 0.5 - Math.random());
+            // Selecciona las primeras 10 preguntas
+            currentQuizData = shuffled.slice(0, 10);
+            return currentQuizData.length;
+        }
+
+        /**
+         * Muestra la pregunta actual y prepara la interfaz.
+         */
+        function displayQuestion() {
+            if (currentQuestionIndex < currentQuizData.length) {
+                currentQuestion = currentQuizData[currentQuestionIndex];
+                countryDisplay.textContent = currentQuestion.country;
+                answerInput.value = '';
+                answerInput.disabled = false;
+                submitButton.textContent = 'Comprobar';
+                submitButton.disabled = false;
+                answerInput.focus();
+                isAnswered = false;
+                
+                // Actualizar contadores
+                scoreDisplay.textContent = `Puntuación: ${score}`;
+                progressDisplay.textContent = `Pregunta ${currentQuestionIndex + 1}/${currentQuizData.length}`;
+            } else {
+                endQuiz();
+            }
+        }
+
+        /**
+         * Maneja la comprobación de la respuesta del usuario.
+         */
+        function checkAnswer() {
+            if (isAnswered) return; // Evita doble click
+
+            const userAnswer = answerInput.value;
+            const correctAnswer = currentQuestion.capital;
+
+            if (!userAnswer.trim()) {
+                showFeedback("¡No olvides escribir tu respuesta!", "error");
+                return;
+            }
+
+            isAnswered = true; // Bloquea el botón después de la primera respuesta
+            submitButton.disabled = true;
+            answerInput.disabled = true;
+
+            const normalizedUser = normalizeText(userAnswer);
+            const normalizedCorrect = normalizeText(correctAnswer);
+
+            if (normalizedUser === normalizedCorrect) {
+                score++;
+                showFeedback("¡Correcto! 🎉", "success");
+            } else {
+                showFeedback(`¡Incorrecto! La capital de ${currentQuestion.country} es: ${correctAnswer}. 😔`, "error");
+            }
+
+            // Actualiza la puntuación antes de avanzar
+            scoreDisplay.textContent = `Puntuación: ${score}`;
+
+            // Prepara para la siguiente pregunta
+            submitButton.textContent = 'Siguiente Pregunta';
+            submitButton.disabled = false;
+            
+            // Permite avanzar haciendo clic de nuevo
+            submitButton.onclick = advanceQuiz;
+        }
+
+        /**
+         * Avanza a la siguiente pregunta o termina el quiz.
+         */
+        function advanceQuiz() {
+            currentQuestionIndex++;
+            submitButton.onclick = checkAnswer; // Restaura el manejador de comprobación
+            // Limpia feedback antes de la siguiente pregunta
+            feedbackArea.innerHTML = ''; 
+            
+            displayQuestion();
+        }
+
+        /**
+         * Inicializa o reinicia el quiz.
+         */
+        function startQuiz() {
+            score = 0;
+            currentQuestionIndex = 0;
+            const totalQuestions = selectRandomQuestions();
+
+            if (totalQuestions === 0) {
+                countryDisplay.textContent = "Error: No se encontraron preguntas.";
+                return;
+            }
+
+            // Ocultar/Mostrar botones
+            restartButton.classList.add('hidden');
+            document.getElementById('answer-form').classList.remove('hidden');
+            
+            // Iniciar la primera pregunta
+            displayQuestion();
+            quizContainer.classList.remove('border-green-500'); // Limpiar estilo final
+            quizContainer.classList.add('border-indigo-500');
+        }
+
+        /**
+         * Muestra los resultados finales.
+         */
+        function endQuiz() {
+            const finalScore = score;
+            const totalQuestions = currentQuizData.length;
+            
+            countryDisplay.textContent = "¡Quiz Terminado!";
+            answerInput.value = "";
+            answerInput.disabled = true;
+            submitButton.classList.add('hidden');
+            document.getElementById('answer-form').classList.add('hidden');
+            
+            // Mostrar resultados en el área de feedback
+            feedbackArea.innerHTML = `
+                <div class="p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-md text-center shadow-md">
+                    <p class="text-2xl font-bold mb-2">Resultados Finales</p>
+                    <p class="text-xl">Obtuviste <span class="text-3xl font-extrabold text-green-800">${finalScore}</span> de ${totalQuestions} correctas.</p>
+                </div>
+            `;
+            
+            progressDisplay.textContent = `Finalizado`;
+            restartButton.classList.remove('hidden');
+            
+            quizContainer.classList.remove('border-indigo-500');
+            quizContainer.classList.add('border-green-500');
+        }
+
+        // --- Inicialización de Eventos ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Asignar el listener al botón de Comprobar (que también funciona como "Siguiente")
+            submitButton.onclick = checkAnswer; 
+            
+            // Permitir enviar con la tecla Enter en el input
+            answerInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !submitButton.disabled) {
+                    // Si el texto del botón es 'Comprobar', comprueba, si es 'Siguiente Pregunta', avanza.
+                    if (submitButton.textContent === 'Comprobar') {
+                        checkAnswer();
+                    } else {
+                        advanceQuiz();
+                    }
+                }
+            });
+
+            // Iniciar el quiz al cargar la página
+            startQuiz();
+        });
+
+    </script>
+</body>
+</html>
