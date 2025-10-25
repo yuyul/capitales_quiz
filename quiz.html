@@ -1,106 +1,141 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz de Capitales Europeas</title>
-    <!-- Carga de Tailwind CSS -->
+    <title>Quiz de Capitals Europees</title>
+    <!-- Càrrega de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Fuente personalizada y estilos básicos */
+        /* Font personalitzada i estils bàsics */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Fondo claro */
+            background-color: #f0f4f8; /* Fons clar */
         }
-        /* Estilo para el input de respuesta para un mejor enfoque */
+        /* Estil per al camp de resposta per a un millor enfocament */
         input:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Sombra de enfoque azul suave */
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Ombra d'enfocament blava suau */
         }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <!-- Contenedor principal de la tarjeta del quiz -->
+    <!-- Contenidor principal de la targeta del quiz -->
     <div id="quiz-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 md:p-10 border-t-8 border-indigo-500 transform transition-all duration-300">
         <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 text-center mb-6">
-            Quiz de Capitales Europeas 🇪🇺
+            Quiz de Capitals Europees 🇪🇺
         </h1>
 
-        <!-- Puntuación y Contador -->
+        <!-- Puntuació i Comptador -->
         <div class="flex justify-between items-center mb-6 text-lg font-semibold text-gray-600">
-            <span id="score-display">Puntuación: 0</span>
+            <span id="score-display">Puntuació: 0</span>
             <span id="progress-display" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm shadow-inner">Pregunta 0/0</span>
         </div>
 
-        <!-- Área de Pregunta -->
+        <!-- Àrea de Pregunta -->
         <div class="bg-indigo-50 p-6 rounded-lg shadow-inner mb-6">
-            <p class="text-xl text-gray-700 mb-2">¿Cuál es la capital de...?</p>
+            <p class="text-xl text-gray-700 mb-2">Quina és la capital de...?</p>
             <p id="country-display" class="text-4xl font-black text-indigo-600 text-center animate-pulse">
-                Cargando país...
+                Carregant país...
             </p>
         </div>
 
-        <!-- Formulario de Respuesta -->
+        <!-- Formulari de Resposta -->
         <div id="answer-form">
-            <input type="text" id="answer-input" placeholder="Escribe tu respuesta aquí" 
+            <input type="text" id="answer-input" placeholder="Escriu la teva resposta aquí" 
                    class="w-full p-3 md:p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-indigo-500 transition duration-150 mb-4" 
-                   aria-label="Campo de respuesta de la capital">
+                   aria-label="Camp de resposta de la capital">
             
             <button id="submit-button" 
                     class="w-full py-3 md:py-4 bg-indigo-600 text-white text-xl font-bold rounded-lg hover:bg-indigo-700 transition duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.01] disabled:opacity-50"
                     disabled>
-                Comprobar
+                Comprovar
             </button>
         </div>
 
-        <!-- Área de Retroalimentación/Mensajes -->
+        <!-- Àrea de Retroalimentació/Missatges -->
         <div id="feedback-area" class="mt-6 min-h-[4rem]">
-            <!-- Los mensajes de éxito/error se insertarán aquí -->
+            <!-- Els missatges d'èxit/error s'inseriran aquí -->
         </div>
         
-        <!-- Botón para empezar de nuevo (oculto al inicio) -->
+        <!-- Botó per tornar a començar (ocult a l'inici) -->
         <button id="restart-button" 
                 class="w-full py-3 mt-4 bg-green-500 text-white text-lg font-bold rounded-lg hover:bg-green-600 transition duration-200 shadow-md hidden"
                 onclick="startQuiz()">
-            Empezar de Nuevo
+            Començar de Nou
         </button>
 
     </div>
 
     <script>
-        // Definición de los datos del Quiz
+        // Definició de les dades del Quiz. Llista completa de països i capitals d'Europa en català.
         const COUNTRIES = [
-            { country: "Francia", capital: "París" },
-            { country: "Alemania", capital: "Berlín" },
-            { country: "España", capital: "Madrid" },
-            { country: "Italia", capital: "Roma" },
-            { country: "Reino Unido", capital: "Londres" },
-            { country: "Grecia", capital: "Atenas" },
-            { country: "Portugal", capital: "Lisboa" },
-            { country: "Bélgica", capital: "Bruselas" },
-            { country: "Países Bajos", capital: "Ámsterdam" },
-            { country: "Suecia", capital: "Estocolmo" },
-            { country: "Noruega", capital: "Oslo" },
-            { country: "Dinamarca", capital: "Copenhague" },
-            { country: "Austria", capital: "Viena" },
-            { country: "Suiza", capital: "Berna" },
+            { country: "Alemanya", capital: "Berlín" },
+            { country: "Àustria", capital: "Viena" },
+            { country: "Bèlgica", capital: "Brussel·les" },
+            { country: "Dinamarca", capital: "Copenhaguen" },
+            { country: "Espanya", capital: "Madrid" },
+            { country: "Finlàndia", capital: "Hèlsinki" },
+            { country: "França", capital: "París" },
+            { country: "Grècia", capital: "Atenes" },
             { country: "Irlanda", capital: "Dublín" },
-            { country: "Polonia", capital: "Varsovia" },
-            { country: "Hungría", capital: "Budapest" },
-            { country: "República Checa", capital: "Praga" },
-            { country: "Finlandia", capital: "Helsinki" },
-            { country: "Islandia", capital: "Reikiavik" }
+            { country: "Islàndia", capital: "Reykjavík" },
+            { country: "Itàlia", capital: "Roma" },
+            { country: "Noruega", capital: "Oslo" },
+            { country: "Països Baixos", capital: "Amsterdam" },
+            { country: "Portugal", capital: "Lisboa" },
+            { country: "Regne Unit", capital: "Londres" },
+            { country: "Suècia", capital: "Estocolm" },
+            
+            // Països de l'Europa Central i de l'Est ampliats
+            { country: "Albània", capital: "Tirana" },
+            { country: "Belarús", capital: "Minsk" },
+            { country: "Bòsnia i Hercegovina", capital: "Sarajevo" },
+            { country: "Bulgària", capital: "Sofia" },
+            { country: "Croàcia", capital: "Zagreb" },
+            { country: "Eslovàquia", capital: "Bratislava" },
+            { country: "Eslovènia", capital: "Ljubljana" },
+            { country: "Estònia", capital: "Tallinn" },
+            { country: "Hongria", capital: "Budapest" },
+            { country: "Letònia", capital: "Riga" },
+            { country: "Lituània", capital: "Vílnius" },
+            { country: "Macedònia del Nord", capital: "Skopje" },
+            { country: "Moldàvia", capital: "Chisinau" },
+            { country: "Montenegro", capital: "Podgorica" },
+            { country: "Polònia", capital: "Varsòvia" },
+            { country: "República Txeca", capital: "Praga" },
+            { country: "Romania", capital: "Bucarest" },
+            { country: "Sèrbia", capital: "Belgrad" },
+            { country: "Ucraïna", capital: "Kíiv" },
+            
+            // Microestats
+            { country: "Andorra", capital: "Andorra la Vella" },
+            { country: "Liechtenstein", capital: "Vaduz" },
+            { country: "Luxemburg", capital: "Luxemburg" },
+            { country: "Malta", capital: "La Valletta" },
+            { country: "Mònaco", capital: "Mònaco" },
+            { country: "San Marino", capital: "San Marino" },
+            { country: "Ciutat del Vaticà", capital: "Ciutat del Vaticà" },
+            
+            // Països transcontinentals i altres
+            { country: "Xipre", capital: "Nicòsia" },
+            { country: "Kosovo", capital: "Pristina" },
+            { country: "Rússia (part europea)", capital: "Moscou" },
+            { country: "Turquia (part europea)", capital: "Ankara" },
+            { country: "Armènia", capital: "Ierevan" },
+            { country: "Azerbaidjan", capital: "Bakú" },
+            { country: "Geòrgia", capital: "Tbilisi" }
         ];
 
-        // --- Variables de Estado del Juego ---
-        let currentQuizData = []; // Datos para la ronda actual
+        // --- Variables d'Estat del Joc ---
+        let currentQuizData = []; // Dades per a la ronda actual
         let currentQuestionIndex = 0;
         let score = 0;
         let currentQuestion = null;
         let isAnswered = false;
 
-        // --- Referencias a Elementos del DOM ---
+        // --- Referències a Elements del DOM ---
         const countryDisplay = document.getElementById('country-display');
         const answerInput = document.getElementById('answer-input');
         const submitButton = document.getElementById('submit-button');
@@ -110,24 +145,24 @@
         const restartButton = document.getElementById('restart-button');
         const quizContainer = document.getElementById('quiz-container');
 
-        // --- Funciones de Utilidad ---
+        // --- Funcions d'Utilitat ---
 
         /**
-         * Limpia y normaliza una cadena de texto para la comparación (minúsculas, sin acentos).
+         * Neteja i normalitza una cadena de text per a la comparació (minúscules, sense accents).
          * @param {string} text 
-         * @returns {string} Texto normalizado.
+         * @returns {string} Text normalitzat.
          */
         function normalizeText(text) {
             return text
                 .toLowerCase()
                 .trim()
-                .normalize("NFD") // Descompone caracteres como 'é' a 'e' + acento
-                .replace(/[\u0300-\u036f]/g, ""); // Elimina los acentos
+                .normalize("NFD") // Descompon caràcters com 'é' a 'e' + accent
+                .replace(/[\u0300-\u036f]/g, ""); // Elimina els accents
         }
 
         /**
-         * Muestra un mensaje de retroalimentación temporal.
-         * @param {string} message Mensaje a mostrar.
+         * Mostra un missatge de retroalimentació temporal.
+         * @param {string} message Missatge a mostrar.
          * @param {string} type 'success' o 'error'.
          */
         function showFeedback(message, type) {
@@ -138,32 +173,33 @@
                     <p class="font-medium">${message}</p>
                 </div>
             `;
-            // Limpia el área después de un tiempo si es un feedback de respuesta
+            // Neteja l'àrea després d'un temps si és un feedback de resposta
             if (type !== 'end') {
                  setTimeout(() => {
                     if (feedbackArea.firstChild) {
                         feedbackArea.firstChild.classList.add('opacity-0', 'scale-95');
                         setTimeout(() => feedbackArea.innerHTML = '', 300);
                     }
-                }, 2000); // 2 segundos
+                }, 2000); // 2 segons
             }
         }
 
-        // --- Lógica del Quiz ---
+        // --- Lògica del Quiz ---
 
         /**
-         * Selecciona un subconjunto aleatorio de 10 preguntas.
+         * Selecciona un subconjunt aleatori de 15 preguntes.
          */
         function selectRandomQuestions() {
-            // Mezcla el array original
+            // Barreja l'array original
             const shuffled = [...COUNTRIES].sort(() => 0.5 - Math.random());
-            // Selecciona las primeras 10 preguntas
-            currentQuizData = shuffled.slice(0, 10);
+            // Selecciona les primeres 15 preguntes (ajustat per la llista ampliada)
+            const numQuestions = Math.min(15, COUNTRIES.length); 
+            currentQuizData = shuffled.slice(0, numQuestions);
             return currentQuizData.length;
         }
 
         /**
-         * Muestra la pregunta actual y prepara la interfaz.
+         * Mostra la pregunta actual i prepara la interfície.
          */
         function displayQuestion() {
             if (currentQuestionIndex < currentQuizData.length) {
@@ -171,13 +207,13 @@
                 countryDisplay.textContent = currentQuestion.country;
                 answerInput.value = '';
                 answerInput.disabled = false;
-                submitButton.textContent = 'Comprobar';
+                submitButton.textContent = 'Comprovar';
                 submitButton.disabled = false;
                 answerInput.focus();
                 isAnswered = false;
                 
-                // Actualizar contadores
-                scoreDisplay.textContent = `Puntuación: ${score}`;
+                // Actualitzar comptadors
+                scoreDisplay.textContent = `Puntuació: ${score}`;
                 progressDisplay.textContent = `Pregunta ${currentQuestionIndex + 1}/${currentQuizData.length}`;
             } else {
                 endQuiz();
@@ -185,20 +221,20 @@
         }
 
         /**
-         * Maneja la comprobación de la respuesta del usuario.
+         * Gestiona la comprovació de la resposta de l'usuari.
          */
         function checkAnswer() {
-            if (isAnswered) return; // Evita doble click
+            if (isAnswered) return; // Evita doble clic
 
             const userAnswer = answerInput.value;
             const correctAnswer = currentQuestion.capital;
 
             if (!userAnswer.trim()) {
-                showFeedback("¡No olvides escribir tu respuesta!", "error");
+                showFeedback("No oblidis escriure la teva resposta!", "error");
                 return;
             }
 
-            isAnswered = true; // Bloquea el botón después de la primera respuesta
+            isAnswered = true; // Bloqueja el botó després de la primera resposta
             submitButton.disabled = true;
             answerInput.disabled = true;
 
@@ -207,36 +243,36 @@
 
             if (normalizedUser === normalizedCorrect) {
                 score++;
-                showFeedback("¡Correcto! 🎉", "success");
+                showFeedback("Correcte! 🎉", "success");
             } else {
-                showFeedback(`¡Incorrecto! La capital de ${currentQuestion.country} es: ${correctAnswer}. 😔`, "error");
+                showFeedback(`Incorrecte! La capital de ${currentQuestion.country} és: ${correctAnswer}. 😔`, "error");
             }
 
-            // Actualiza la puntuación antes de avanzar
-            scoreDisplay.textContent = `Puntuación: ${score}`;
+            // Actualitza la puntuació abans d'avançar
+            scoreDisplay.textContent = `Puntuació: ${score}`;
 
-            // Prepara para la siguiente pregunta
-            submitButton.textContent = 'Siguiente Pregunta';
+            // Prepara per a la següent pregunta
+            submitButton.textContent = 'Següent Pregunta';
             submitButton.disabled = false;
             
-            // Permite avanzar haciendo clic de nuevo
+            // Permet avançar fent clic de nou
             submitButton.onclick = advanceQuiz;
         }
 
         /**
-         * Avanza a la siguiente pregunta o termina el quiz.
+         * Avança a la següent pregunta o acaba el quiz.
          */
         function advanceQuiz() {
             currentQuestionIndex++;
-            submitButton.onclick = checkAnswer; // Restaura el manejador de comprobación
-            // Limpia feedback antes de la siguiente pregunta
+            submitButton.onclick = checkAnswer; // Restaura el gestor de comprovació
+            // Neteja feedback abans de la següent pregunta
             feedbackArea.innerHTML = ''; 
             
             displayQuestion();
         }
 
         /**
-         * Inicializa o reinicia el quiz.
+         * Inicialitza o reinicia el quiz.
          */
         function startQuiz() {
             score = 0;
@@ -244,58 +280,58 @@
             const totalQuestions = selectRandomQuestions();
 
             if (totalQuestions === 0) {
-                countryDisplay.textContent = "Error: No se encontraron preguntas.";
+                countryDisplay.textContent = "Error: No s'han trobat preguntes.";
                 return;
             }
 
-            // Ocultar/Mostrar botones
+            // Ocultar/Mostrar botons
             restartButton.classList.add('hidden');
             document.getElementById('answer-form').classList.remove('hidden');
             
             // Iniciar la primera pregunta
             displayQuestion();
-            quizContainer.classList.remove('border-green-500'); // Limpiar estilo final
+            quizContainer.classList.remove('border-green-500'); // Netejar estil final
             quizContainer.classList.add('border-indigo-500');
         }
 
         /**
-         * Muestra los resultados finales.
+         * Mostra els resultats finals.
          */
         function endQuiz() {
             const finalScore = score;
             const totalQuestions = currentQuizData.length;
             
-            countryDisplay.textContent = "¡Quiz Terminado!";
+            countryDisplay.textContent = "Quiz Acabat!";
             answerInput.value = "";
             answerInput.disabled = true;
             submitButton.classList.add('hidden');
             document.getElementById('answer-form').classList.add('hidden');
             
-            // Mostrar resultados en el área de feedback
+            // Mostrar resultats a l'àrea de feedback
             feedbackArea.innerHTML = `
                 <div class="p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-md text-center shadow-md">
-                    <p class="text-2xl font-bold mb-2">Resultados Finales</p>
-                    <p class="text-xl">Obtuviste <span class="text-3xl font-extrabold text-green-800">${finalScore}</span> de ${totalQuestions} correctas.</p>
+                    <p class="text-2xl font-bold mb-2">Resultats Finals</p>
+                    <p class="text-xl">Has obtingut <span class="text-3xl font-extrabold text-green-800">${finalScore}</span> de ${totalQuestions} respostes correctes.</p>
                 </div>
             `;
             
-            progressDisplay.textContent = `Finalizado`;
+            progressDisplay.textContent = `Finalitzat`;
             restartButton.classList.remove('hidden');
             
             quizContainer.classList.remove('border-indigo-500');
             quizContainer.classList.add('border-green-500');
         }
 
-        // --- Inicialización de Eventos ---
+        // --- Inicialització d'Esdeveniments ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Asignar el listener al botón de Comprobar (que también funciona como "Siguiente")
+            // Assignar el listener al botó de Comprovar (que també funciona com a "Següent")
             submitButton.onclick = checkAnswer; 
             
-            // Permitir enviar con la tecla Enter en el input
+            // Permetre enviar amb la tecla Enter al camp de resposta
             answerInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !submitButton.disabled) {
-                    // Si el texto del botón es 'Comprobar', comprueba, si es 'Siguiente Pregunta', avanza.
-                    if (submitButton.textContent === 'Comprobar') {
+                    // Si el text del botó és 'Comprovar', comprova, si és 'Següent Pregunta', avança.
+                    if (submitButton.textContent === 'Comprovar') {
                         checkAnswer();
                     } else {
                         advanceQuiz();
@@ -303,7 +339,7 @@
                 }
             });
 
-            // Iniciar el quiz al cargar la página
+            // Iniciar el quiz en carregar la pàgina
             startQuiz();
         });
 
