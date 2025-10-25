@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Províncies i Comunitats Autònomes</title>
+    <!-- Càrrega de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Font personalitzada i estils bàsics */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Fons clar */
+        }
+        /* Estil per al camp de resposta per a un millor enfocament */
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Ombra d'enfocament blava suau */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Contenidor principal de la targeta del quiz -->
+    <div id="quiz-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 md:p-10 border-t-8 border-teal-500 transform transition-all duration-300">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 text-center mb-6">
+            Quiz de Províncies d'Espanya 🇪🇸
+        </h1>
+
+        <!-- Puntuació i Comptador -->
+        <div class="flex justify-between items-center mb-6 text-lg font-semibold text-gray-600">
+            <span id="score-display">Puntuació: 0</span>
+            <span id="progress-display" class="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm shadow-inner">Pregunta 0/0</span>
+        </div>
+        
+        <!-- Àrea d'Instruccions actualitzada -->
+        <div class="text-sm text-gray-500 mb-4 p-2 bg-gray-50 rounded-lg">
+            <p><strong>Instrucció:</strong> Escriu **TOTES** les províncies pertanyents a la Comunitat Autònoma. Separa-les amb **comes** (Ex: Barcelona, Tarragona).</p>
+        </div>
+
+        <!-- Àrea de Pregunta -->
+        <div class="bg-teal-50 p-6 rounded-lg shadow-inner mb-6">
+            <p class="text-xl text-gray-700 mb-2">Quines són les províncies de la Comunitat Autònoma de...?</p>
+            <p id="community-display" class="text-4xl font-black text-teal-600 text-center animate-pulse">
+                Carregant comunitat...
+            </p>
+        </div>
+
+        <!-- Formulari de Resposta -->
+        <div id="answer-form">
+            <input type="text" id="answer-input" placeholder="Província 1, Província 2, Província 3..." 
+                   class="w-full p-3 md:p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-teal-500 transition duration-150 mb-4" 
+                   aria-label="Camp de resposta de les províncies">
+            
+            <button id="submit-button" 
+                    class="w-full py-3 md:py-4 bg-teal-600 text-white text-xl font-bold rounded-lg hover:bg-teal-700 transition duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.01] disabled:opacity-50"
+                    disabled>
+                Comprovar
+            </button>
+        </div>
+
+        <!-- Àrea de Retroalimentació/Missatges -->
+        <div id="feedback-area" class="mt-6 min-h-[4rem]">
+            <!-- Els missatges d'èxit/error s'inseriran aquí -->
+        </div>
+        
+        <!-- Botó per tornar a començar (ocult a l'inici) -->
+        <button id="restart-button" 
+                class="w-full py-3 mt-4 bg-green-500 text-white text-lg font-bold rounded-lg hover:bg-green-600 transition duration-200 shadow-md hidden"
+                onclick="startQuiz()">
+            Començar de Nou
+        </button>
+
+    </div>
+
+    <script>
+        // Llista de Comunitats Autònomes i les seves Províncies (en català)
+        const COMMUNITIES = [
+            { community: "Andalusia", provinces: ["Almeria", "Cadis", "Còrdova", "Granada", "Huelva", "Jaén", "Màlaga", "Sevilla"] },
+            { community: "Aragó", provinces: ["Osca", "Terol", "Saragossa"] },
+            { community: "Principat d'Astúries", provinces: ["Astúries"] },
+            { community: "Illes Balears", provinces: ["Illes Balears"] },
+            { community: "Canàries", provinces: ["Las Palmas", "Santa Cruz de Tenerife"] },
+            { community: "Cantàbria", provinces: ["Cantàbria"] },
+            { community: "Castella - la Manxa", provinces: ["Albacete", "Ciudad Real", "Conca", "Guadalajara", "Toledo"] },
+            { community: "Castella i Lleó", provinces: ["Àvila", "Burgos", "Lleó", "Palència", "Salamanca", "Segòvia", "Sòria", "Valladolid", "Zamora"] },
+            { community: "Catalunya", provinces: ["Barcelona", "Girona", "Lleida", "Tarragona"] },
+            { community: "Extremadura", provinces: ["Badajoz", "Càceres"] },
+            { community: "Galícia", provinces: ["La Corunya", "Lugo", "Ourense", "Pontevedra"] },
+            { community: "La Rioja", provinces: ["La Rioja"] },
+            { community: "Comunitat de Madrid", provinces: ["Madrid"] },
+            { community: "Regió de Múrcia", provinces: ["Múrcia"] },
+            { community: "Comunitat Foral de Navarra", provinces: ["Navarra"] },
+            { community: "País Basc", provinces: ["Àlaba", "Biscaia", "Guipúscoa"] },
+            { community: "País Valencià", provinces: ["Alacant", "Castelló", "València"] }
+            // Ceuta i Melilla no s'inclouen ja que no tenen províncies.
+        ];
+
+        // Configuració del Quiz
+        const TOTAL_QUESTIONS_PER_ROUND = 10; // Preguntarà 10 comunitats a l'atzar.
+
+        // --- Variables d'Estat del Joc ---
+        let currentQuizData = []; // Dades per a la ronda actual
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let currentQuestion = null;
+        let isAnswered = false;
+
+        // --- Referències a Elements del DOM ---
+        const communityDisplay = document.getElementById('community-display');
+        const answerInput = document.getElementById('answer-input');
+        const submitButton = document.getElementById('submit-button');
+        const feedbackArea = document.getElementById('feedback-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const progressDisplay = document.getElementById('progress-display');
+        const restartButton = document.getElementById('restart-button');
+        const quizContainer = document.getElementById('quiz-container');
+
+        // --- Funcions d'Utilitat ---
+
+        /**
+         * Neteja i normalitza una cadena de text per a la comparació (minúscules, sense accents, etc.).
+         * @param {string} text 
+         * @returns {string} Text normalitzat.
+         */
+        function normalizeText(text) {
+            return text
+                .toLowerCase()
+                .trim()
+                .replace(/ /g, '') // Elimina espais per fer la comparació més flexible
+                .normalize("NFD") // Descompon caràcters com 'é' a 'e' + accent
+                .replace(/[\u0300-\u036f]/g, "") // Elimina els accents
+                .replace(/delnord|delsud/g, ''); 
+        }
+
+        /**
+         * Mostra un missatge de retroalimentació temporal.
+         * @param {string} message Missatge a mostrar.
+         * @param {string} type 'success' o 'error'.
+         */
+        function showFeedback(message, type) {
+            let bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
+            
+            feedbackArea.innerHTML = `
+                <div class="p-3 border-l-4 ${bgColor} rounded-md shadow-sm transition duration-300 transform scale-100">
+                    <p class="font-medium">${message}</p>
+                </div>
+            `;
+            // Neteja l'àrea després d'un temps si és un feedback de resposta
+            if (type !== 'end') {
+                 setTimeout(() => {
+                    if (feedbackArea.firstChild) {
+                        feedbackArea.firstChild.classList.add('opacity-0', 'scale-95');
+                        setTimeout(() => feedbackArea.innerHTML = '', 300);
+                    }
+                }, 2000); // 2 segons
+            }
+        }
+
+        // --- Lògica del Quiz ---
+
+        /**
+         * Selecciona un subconjunt aleatori de Comunitats.
+         */
+        function selectRandomQuestions() {
+            // Barreja l'array original
+            const shuffled = [...COMMUNITIES].sort(() => 0.5 - Math.random());
+            // Selecciona el nombre de preguntes configurat
+            const numQuestions = Math.min(TOTAL_QUESTIONS_PER_ROUND, COMMUNITIES.length); 
+            currentQuizData = shuffled.slice(0, numQuestions);
+            return currentQuizData.length;
+        }
+
+        /**
+         * Mostra la pregunta actual i prepara la interfície.
+         */
+        function displayQuestion() {
+            if (currentQuestionIndex < currentQuizData.length) {
+                currentQuestion = currentQuizData[currentQuestionIndex];
+                communityDisplay.textContent = currentQuestion.community;
+                answerInput.value = '';
+                answerInput.disabled = false;
+                submitButton.textContent = 'Comprovar';
+                submitButton.disabled = false;
+                answerInput.focus();
+                isAnswered = false;
+                
+                // Actualitzar comptadors
+                scoreDisplay.textContent = `Puntuació: ${score}`;
+                progressDisplay.textContent = `Pregunta ${currentQuestionIndex + 1}/${currentQuizData.length}`;
+            } else {
+                endQuiz();
+            }
+        }
+
+        /**
+         * Gestiona la comprovació de la resposta de l'usuari.
+         */
+        function checkAnswer() {
+            if (isAnswered) return; // Evita doble clic
+
+            const userAnswer = answerInput.value;
+            const correctProvinces = currentQuestion.provinces;
+            const currentCommunity = currentQuestion.community;
+
+            if (!userAnswer.trim()) {
+                showFeedback("No oblidis escriure les províncies!", "error");
+                return;
+            }
+
+            isAnswered = true; // Bloqueja el botó
+            submitButton.disabled = true;
+            answerInput.disabled = true;
+
+            // 1. Processar la resposta de l'usuari
+            const userProvinces = userAnswer
+                .split(',')
+                .map(p => normalizeText(p))
+                .filter(p => p.length > 0); // Elimina entrades buides
+
+            // 2. Processar les províncies correctes
+            const normalizedCorrectProvinces = correctProvinces.map(p => normalizeText(p));
+
+            // 3. Comprovar la correcció
+            let isCorrect = true;
+
+            // A. Comprovar que el nombre de províncies sigui el mateix
+            if (userProvinces.length !== normalizedCorrectProvinces.length) {
+                isCorrect = false;
+            } else {
+                // B. Comprovar que cada província de l'usuari estigui a la llista correcta (ignorant l'ordre)
+                const correctSet = new Set(normalizedCorrectProvinces);
+                for (const userProvince of userProvinces) {
+                    if (!correctSet.has(userProvince)) {
+                        isCorrect = false;
+                        break;
+                    }
+                }
+            }
+
+
+            if (isCorrect) {
+                score++;
+                showFeedback("Correcte! Totes les províncies són correctes. 🎉", "success");
+            } else {
+                showFeedback(`
+                    Incorrecte. La Comunitat de ${currentCommunity} té ${correctProvinces.length} províncies.
+                    Les províncies correctes són: <strong>${correctProvinces.join(', ')}</strong>. 😔
+                `, "error");
+            }
+
+            // Actualitza la puntuació abans d'avançar
+            scoreDisplay.textContent = `Puntuació: ${score}`;
+
+            // Prepara per a la següent pregunta
+            submitButton.textContent = 'Següent Pregunta';
+            submitButton.disabled = false;
+            
+            // Permet avançar fent clic de nou
+            submitButton.onclick = advanceQuiz;
+        }
+
+        /**
+         * Avança a la següent pregunta o acaba el quiz.
+         */
+        function advanceQuiz() {
+            currentQuestionIndex++;
+            submitButton.onclick = checkAnswer; // Restaura el gestor de comprovació
+            // Neteja feedback abans de la següent pregunta
+            feedbackArea.innerHTML = ''; 
+            
+            displayQuestion();
+        }
+
+        /**
+         * Inicialitza o reinicia el quiz.
+         */
+        function startQuiz() {
+            score = 0;
+            currentQuestionIndex = 0;
+            const totalQuestions = selectRandomQuestions();
+
+            if (totalQuestions === 0) {
+                communityDisplay.textContent = "Error: No s'han trobat preguntes.";
+                return;
+            }
+
+            // Ocultar/Mostrar botons i form
+            restartButton.classList.add('hidden');
+            document.getElementById('answer-form').classList.remove('hidden');
+            submitButton.classList.remove('hidden');
+
+            // Iniciar la primera pregunta
+            displayQuestion();
+            quizContainer.classList.remove('border-green-500'); // Netejar estil final
+            quizContainer.classList.add('border-teal-500');
+        }
+
+        /**
+         * Mostra els resultats finals.
+         */
+        function endQuiz() {
+            const finalScore = score;
+            const totalQuestions = currentQuizData.length;
+            
+            communityDisplay.textContent = "Quiz Acabat!";
+            answerInput.value = "";
+            answerInput.disabled = true;
+            submitButton.classList.add('hidden');
+            document.getElementById('answer-form').classList.add('hidden');
+            
+            // Mostrar resultats a l'àrea de feedback
+            feedbackArea.innerHTML = `
+                <div class="p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-md text-center shadow-md">
+                    <p class="text-2xl font-bold mb-2">Resultats Finals</p>
+                    <p class="text-xl">Has obtingut <span class="text-3xl font-extrabold text-green-800">${finalScore}</span> de ${totalQuestions} respostes correctes.</p>
+                </div>
+            `;
+            
+            progressDisplay.textContent = `Finalitzat`;
+            restartButton.classList.remove('hidden');
+            
+            quizContainer.classList.remove('border-teal-500');
+            quizContainer.classList.add('border-green-500');
+        }
+
+        // --- Inicialització d'Esdeveniments ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Assignar el listener al botó de Comprovar (que també funciona com a "Següent")
+            submitButton.onclick = checkAnswer; 
+            
+            // Permetre enviar amb la tecla Enter al camp de resposta
+            answerInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !submitButton.disabled) {
+                    // Si el text del botó és 'Comprovar', comprova, si és 'Següent Pregunta', avança.
+                    if (submitButton.textContent === 'Comprovar') {
+                        checkAnswer();
+                    } else {
+                        advanceQuiz();
+                    }
+                }
+            });
+
+            // Iniciar el quiz en carregar la pàgina
+            startQuiz();
+        });
+
+    </script>
+</body>
+</html>
